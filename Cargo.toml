@@ -1,0 +1,9 @@
+[package]
+name = "network-stuf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+etherparse = "0.17.0"
+nix = "0.29.0"
+tun-tap = "0.1.4"
