@@ -1,5 +1,4 @@
-use etherparse::{IcmpEchoHeader, Ipv4HeaderSlice};
-use std::{fmt::Display, io::Read};
+use std::fmt::Display;
 use tun_tap::Iface;
 
 #[derive(Debug)]
@@ -47,10 +46,58 @@ struct IpPacket {
     data: Vec<u8>,
 }
 
+// derive display for IpPacket
+
+impl Display for IpPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let protocol = match self.header.protocol {
+            1 => "ICMP",
+            2 => "IGMP",
+            3 => "GGP",
+            4 => "IP in IP",
+            5 => "IP in IP",
+            6 => "TCP",
+            7 => "CBT",
+            8 => "EGP",
+            9 => "IGP",
+            10 => "BBN-RCC",
+            11 => "NVP-II",
+            12 => "PUP",
+            13 => "ARGUS",
+            14 => "EMCON",
+            15 => "XNET",
+            16 => "CHAOS",
+            17 => "UDP",
+            18 => "MUX",
+            19 => "DCN",
+            20 => "HMP",
+            21 => "PRM",
+            22 => "XNS-IDP",
+            23 => "TRUNK-1",
+            24 => "TRUNK-2",
+            25 => "LEAF-1",
+            26 => "LEAF-2",
+            27 => "RDP",
+            28 => "IRTP",
+            29 => "ISO-TP4",
+            30 => "NETBLT",
+            31 => "MFE-NSP",
+            32 => "MERIT-INP",
+            33 => "DCCP",
+            34 => "3PC",
+            35 => "IDPR",
+            36 => "XTP",
+            89 => "OSPF",
+            132 => "SCTP",
+            _ => "Unknown Protocol",
+        };
+        writeln!(f, "Protocol {}, data: {:?}", protocol, self.data)
+    }
+}
+
 enum CurrentState {
     Header,
     Data(u16),
-    Done,
 }
 
 impl CurrentState {
@@ -58,46 +105,45 @@ impl CurrentState {
         match self {
             CurrentState::Header => 20,
             CurrentState::Data(size) => *size as usize,
-            CurrentState::Done => 0,
         }
     }
 }
 
 fn main() -> std::io::Result<()> {
-    let mut tun = Iface::without_packet_info("tun0", tun_tap::Mode::Tun)
+    let tun: Iface = Iface::without_packet_info("tun0", tun_tap::Mode::Tun)
         .expect("Failed to create TUN interface");
 
-    let mut buffer = [0u8; 4096];
+    let mut buffer = [0u8; 1504];
     let mut pending = Vec::new();
     let mut current_state = CurrentState::Header;
     let mut current_header = None;
 
     loop {
         let bytes_read = tun.recv(&mut buffer)?;
-        let mut data = &buffer[..bytes_read];
+        let data = &buffer[..bytes_read];
 
         if pending.is_empty() {
             pending = data.to_vec();
         } else {
             pending.extend_from_slice(data);
-            data = &pending;
         }
 
         match current_state {
             CurrentState::Header => {
-                if pending.len() < 20 {
+                let currect_header_size = ((pending[0] & 0x0f) * 4) as usize;
+                if pending.len() < currect_header_size.into() {
                     println!("Packet too short to be an IP packet");
                     continue;
                 }
-                let header = &pending[..20];
+                let header = &pending[..currect_header_size];
                 let ip_header = parse_ip_header(header);
                 println!("{}", ip_header);
 
                 let total_length = ip_header.total_length;
-                if total_length > 20 {
-                    current_state = CurrentState::Data(total_length - 20);
+                if total_length > currect_header_size as u16 {
+                    current_state = CurrentState::Data(total_length - currect_header_size as u16);
                 }
-                pending.drain(..20);
+                pending.drain(..currect_header_size);
                 current_header = Some(ip_header);
             }
             CurrentState::Data(_) => {
@@ -111,12 +157,9 @@ fn main() -> std::io::Result<()> {
                     data: pending[..needed_size].to_vec(),
                 };
 
-                println!("Packet: {:?}", packet);
+                println!("Packet: {}", packet);
                 current_state = CurrentState::Header;
                 pending.drain(..needed_size);
-            }
-            CurrentState::Done => {
-                current_state = CurrentState::Header;
             }
         }
     }
