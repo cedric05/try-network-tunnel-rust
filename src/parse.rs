@@ -49,48 +49,46 @@ impl Iterator for IPStream {
                 self.buffer.extend_from_slice(data);
             }
 
-            match self.current_state {
-                CurrentState::Header(header_size) => {
-                    let currect_header_size = match header_size {
-                        Some(size) => size,
-                        None => {
-                            if self.buffer.is_empty() {
-                                20
-                            } else {
-                                let current_header_size = (self.buffer[0] & 0x0f) * 4;
-                                self.current_state = CurrentState::header(current_header_size);
-                                current_header_size
-                            }
+            if let CurrentState::Header(header_size) = self.current_state {
+                let currect_header_size = match header_size {
+                    Some(size) => size,
+                    None => {
+                        if self.buffer.is_empty() {
+                            20
+                        } else {
+                            let current_header_size = (self.buffer[0] & 0x0f) * 4;
+                            self.current_state = CurrentState::header(current_header_size);
+                            current_header_size
                         }
-                    };
-                    if self.buffer.len() < currect_header_size.into() {
-                        continue;
                     }
-                    let header_buffer: Vec<u8> = self
-                        .buffer
-                        .drain(..(currect_header_size as usize))
-                        .collect();
-                    let ip_header = parse_ip_header(&header_buffer);
-                    let total_packet_length = ip_header.total_length;
-                    if total_packet_length >= currect_header_size as u16 {
-                        self.current_state =
-                            CurrentState::Data(total_packet_length - currect_header_size as u16);
-                    };
-                    current_header = Some(ip_header);
+                };
+                if self.buffer.len() < currect_header_size.into() {
+                    continue;
                 }
-                CurrentState::Data(size) => {
-                    let needed_size = size as usize;
-                    if self.buffer.len() < needed_size {
-                        continue;
-                    }
-                    let data: Vec<u8> = self.buffer.drain(..needed_size).collect();
-                    let packet = IpPacket {
-                        header: current_header.take().unwrap(),
-                        data,
-                    };
-                    self.current_state = CurrentState::Header(None);
-                    return Some(Ok(packet));
+                let header_buffer: Vec<u8> = self
+                    .buffer
+                    .drain(..(currect_header_size as usize))
+                    .collect();
+                let ip_header = parse_ip_header(&header_buffer);
+                let total_packet_length = ip_header.total_length;
+                if total_packet_length >= currect_header_size as u16 {
+                    self.current_state =
+                        CurrentState::Data(total_packet_length - currect_header_size as u16);
+                };
+                current_header = Some(ip_header);
+            }
+            if let CurrentState::Data(size) = self.current_state {
+                let needed_size = size as usize;
+                if self.buffer.len() < needed_size {
+                    continue;
                 }
+                let data: Vec<u8> = self.buffer.drain(..needed_size).collect();
+                let packet = IpPacket {
+                    header: current_header.take().unwrap(),
+                    data,
+                };
+                self.current_state = CurrentState::Header(None);
+                return Some(Ok(packet));
             }
         }
     }
