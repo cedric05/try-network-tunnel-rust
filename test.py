@@ -1,4 +1,4 @@
 import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.sendto(b"h"*3000, ("10.0.0.2", 1234))
+s.sendto(b"hello", ("192.168.1.139", 8081))
 s.close()

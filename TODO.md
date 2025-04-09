@@ -1,0 +1,12 @@
+- [ ] over ssl
+    - [ ] possibly mutual auth
+- [ ] multi threaded
+    - [ ] server
+    - [ ] client
+- [ ] exceptions
+    - [ ] handle multiple connections server
+    - [ ] handle retry in client, if connection failed.
+- [ ] create tuntap autometically without having to create via ip commands.
+- [ ] delete on exit.
+- [ ] TWO way traffic (Currently its one way, client side machines -> client gateway -> server gateway -> server side machines)
+

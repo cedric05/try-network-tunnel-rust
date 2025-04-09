@@ -75,7 +75,7 @@ impl Iterator for IPStream {
                     self.current_state =
                         CurrentState::Data(total_packet_length - currect_header_size as u16);
                 };
-                current_header = Some(ip_header);
+                current_header = Some((ip_header, header_buffer));
             }
             if let CurrentState::Data(size) = self.current_state {
                 let needed_size = size as usize;
@@ -83,8 +83,10 @@ impl Iterator for IPStream {
                     continue;
                 }
                 let data: Vec<u8> = self.buffer.drain(..needed_size).collect();
+                let (header, header_data) = current_header.take().unwrap();
                 let packet = IpPacket {
-                    header: current_header.take().unwrap(),
+                    header,
+                    header_data,
                     data,
                 };
                 self.current_state = CurrentState::Header(None);

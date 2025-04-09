@@ -1,8 +1,8 @@
 import socket
 
 # Server configuration
-UDP_IP = "172.25.56.104"      # Listen on all interfaces
-UDP_PORT = 8080         # Choose your desired port
+UDP_IP = "192.168.1.139"      # Listen on all interfaces
+UDP_PORT = 8081         # Choose your desired port
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

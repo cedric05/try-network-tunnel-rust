@@ -42,6 +42,7 @@ impl Display for IpHeader {
 #[derive(Debug)]
 pub struct IpPacket {
     pub header: IpHeader,
+    pub header_data: Vec<u8>,
     pub data: Vec<u8>,
 }
 
