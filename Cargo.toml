@@ -1,9 +1,10 @@
 [package]
-name = "network-stuf"
+name = "private-tunnel"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = {version="4.5.35", features=["derive"]}
 # etherparse = "0.17.0"
 nix = "0.29.0"
 tun-tap = "0.1.4"

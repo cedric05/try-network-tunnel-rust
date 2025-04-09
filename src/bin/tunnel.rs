@@ -1,4 +1,4 @@
-use network_stuf::parse;
+use private_tunnel::parse;
 use tun_tap::Iface;
 
 fn main() {
@@ -6,6 +6,10 @@ fn main() {
         .expect("Failed to create TUN interface");
     let stream = parse::IPStream::new(tun);
     for packet in stream {
-        println!("packet is {packet:?}");
+        let packet = packet.unwrap();
+        println!(
+            "packet is {:?} with lenght{:?}",
+            packet.header, packet.header.total_length
+        );
     }
 }
