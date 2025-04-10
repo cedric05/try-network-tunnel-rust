@@ -9,4 +9,7 @@
 - [ ] create tuntap autometically without having to create via ip commands.
 - [ ] delete on exit.
 - [ ] TWO way traffic (Currently its one way, client side machines -> client gateway -> server gateway -> server side machines)
+- [ ] figure out way for overlapping network
+- [ ] use UDP inplace of TCP
+- [ ] Add policy?
 
